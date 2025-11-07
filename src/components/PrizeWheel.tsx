@@ -78,19 +78,21 @@ export const PrizeWheel = () => {
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Texto do prêmio
+      // Texto do prêmio - centralizado na fatia
       ctx.save();
       ctx.rotate(startAngle + anglePerSlice / 2);
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 14px 'Inter', sans-serif";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-      ctx.shadowBlur = 4;
+      ctx.font = "bold 15px 'Inter', sans-serif";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 2;
 
       // Quebrar texto em múltiplas linhas se necessário
       const words = prize.name.split(" ");
-      const maxWidth = radius * 0.6;
+      const maxWidth = radius * 0.55;
       let line = "";
       const lines: string[] = [];
 
@@ -106,13 +108,15 @@ export const PrizeWheel = () => {
       });
       lines.push(line.trim());
 
-      // Desenhar linhas centralizadas
-      const lineHeight = 18;
+      // Calcular posição vertical centralizada
+      const lineHeight = 20;
       const totalHeight = lines.length * lineHeight;
-      const startY = radius * 0.65 - totalHeight / 2;
+      const textRadius = radius * 0.7; // Distância do centro
+      const startY = -(totalHeight / 2) + lineHeight / 2;
 
+      // Desenhar cada linha centralizada
       lines.forEach((textLine, i) => {
-        ctx.fillText(textLine, radius * 0.65, startY + i * lineHeight);
+        ctx.fillText(textLine, textRadius, startY + i * lineHeight);
       });
 
       ctx.restore();
