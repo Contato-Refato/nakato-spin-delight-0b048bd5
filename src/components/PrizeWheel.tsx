@@ -152,9 +152,9 @@ export const PrizeWheel = () => {
   const calculatePrize = (finalRotation: number): string => {
     const normalizedRotation = finalRotation % 360;
     const anglePerSlice = 360 / PRIZES.length;
-    // Ajustar para que o indicador aponte para o topo
-    const adjustedRotation = (360 - normalizedRotation + 90) % 360;
-    const prizeIndex = Math.floor(adjustedRotation / anglePerSlice);
+    // A seta está no topo (0°). Ajustar para encontrar qual fatia está no topo
+    const adjustedRotation = (normalizedRotation + anglePerSlice / 2) % 360;
+    const prizeIndex = Math.floor(adjustedRotation / anglePerSlice) % PRIZES.length;
     return PRIZES[prizeIndex].name;
   };
 

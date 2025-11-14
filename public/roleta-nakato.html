@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roleta de Prêmios - Nakato</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0F4C2E 0%, #1a6d4a 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .description {
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 30px;
+    }
+
+    .wheel-container {
+      position: relative;
+      margin: 0 auto 30px;
+      width: fit-content;
+    }
+
+    .arrow {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid #F26A21;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+      z-index: 10;
+    }
+
+    .wheel-wrapper {
+      background: white;
+      padding: 20px;
+      border-radius: 50%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .spin-button {
+      background: #F26A21;
+      color: white;
+      font-size: 1.3rem;
+      font-weight: bold;
+      padding: 18px 50px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(242, 106, 33, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .spin-button:hover:not(:disabled) {
+      background: #d95a1a;
+      transform: scale(1.05);
+    }
+
+    .spin-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+      border: 4px solid #F26A21;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-title {
+      color: #0F4C2E;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .prize-display {
+      background: linear-gradient(135deg, #F26A21, #d95a1a);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 20px 0;
+      box-shadow: 0 4px 15px rgba(242, 106, 33, 0.3);
+    }
+
+    .modal-text {
+      color: #666;
+      margin: 15px 0;
+    }
+
+    .close-button {
+      background: #0F4C2E;
+      color: white;
+      font-weight: bold;
+      padding: 12px 40px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+
+    .close-button:hover {
+      background: #0a3820;
+    }
+
+    footer {
+      color: rgba(255,255,255,0.7);
+      margin-top: 30px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Roleta de Prêmios</h1>
+    <p class="subtitle">Restaurante Nakato</p>
+    <p class="description">Gire e ganhe prêmios incríveis!</p>
+
+    <div class="wheel-container">
+      <div class="arrow"></div>
+      <div class="wheel-wrapper">
+        <canvas id="wheelCanvas" width="440" height="440"></canvas>
+      </div>
+    </div>
+
+    <button class="spin-button" id="spinButton" onclick="spinWheel()">
+      GIRAR ROLETA
+    </button>
+
+    <footer>© 2024 Nakato - Restaurante Japonês</footer>
+  </div>
+
+  <div class="modal" id="prizeModal">
+    <div class="modal-content">
+      <h2 class="modal-title">🎉 Parabéns! 🎉</h2>
+      <p class="modal-text">Você ganhou:</p>
+      <div class="prize-display" id="prizeText"></div>
+      <p class="modal-text">Aproveite seu prêmio no Restaurante Nakato!</p>
+      <button class="close-button" onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 🎯 CONFIGURAÇÃO DOS PRÊMIOS E PROBABILIDADES
+    // ==========================================
+    const PRIZES = [
+      { id: 1, name: "Combinado de Salmão", probability: 1, color: "#F26A21" },
+      { id: 2, name: "30% OFF no pedido", probability: 10.44, color: "#0F4C2E" },
+      { id: 3, name: "Refrigerante", probability: 10.44, color: "#F26A21" },
+      { id: 4, name: "Hot Banana (10 un.)", probability: 10.44, color: "#0F4C2E" },
+      { id: 5, name: "Hot Roll (10 un.)", probability: 10.44, color: "#F26A21" },
+      { id: 6, name: "Yakissoba Clássico", probability: 5, color: "#0F4C2E" },
+      { id: 7, name: "Petit Gateau", probability: 10.44, color: "#F26A21" },
+      { id: 8, name: "R$ 10 OFF", probability: 10.44, color: "#0F4C2E" },
+      { id: 9, name: "15% OFF no pedido", probability: 10.44, color: "#F26A21" },
+      { id: 10, name: "R$ 5 OFF", probability: 10.44, color: "#0F4C2E" },
+      { id: 11, name: "10% OFF no pedido", probability: 10.44, color: "#F26A21" },
+    ];
+
+    // ==========================================
+    // 🎨 CONFIGURAÇÕES VISUAIS
+    // ==========================================
+    const WHEEL_CONFIG = {
+      spinDuration: 5000,
+      minSpins: 5,
+      wheelSize: 400,
+      borderWidth: 15,
+      centerCircleSize: 60,
+    };
+
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    let isSpinning = false;
+    let rotation = 0;
+
+    // Desenhar a roleta
+    function drawWheel(currentRotation = 0) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = WHEEL_CONFIG.wheelSize / 2;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate((currentRotation * Math.PI) / 180);
+
+      const anglePerSlice = (2 * Math.PI) / PRIZES.length;
+      
+      PRIZES.forEach((prize, index) => {
+        const startAngle = index * anglePerSlice - Math.PI / 2;
+        const endAngle = startAngle + anglePerSlice;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = prize.color;
+        ctx.fill();
+
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(startAngle + anglePerSlice / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 15px 'Inter', sans-serif";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 2;
+
+        const words = prize.name.split(" ");
+        const maxWidth = radius * 0.55;
+        let line = "";
+        const lines = [];
+
+        words.forEach((word) => {
+          const testLine = line + word + " ";
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && line !== "") {
+            lines.push(line.trim());
+            line = word + " ";
+          } else {
+            line = testLine;
+          }
+        });
+        lines.push(line.trim());
+
+        const lineHeight = 20;
+        const totalHeight = lines.length * lineHeight;
+        const textRadius = radius * 0.7;
+        const startY = -(totalHeight / 2) + lineHeight / 2;
+
+        lines.forEach((textLine, i) => {
+          ctx.fillText(textLine, textRadius, startY + i * lineHeight);
+        });
+
+        ctx.restore();
+      });
+
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = "#0F4C2E";
+      ctx.lineWidth = WHEEL_CONFIG.borderWidth;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, WHEEL_CONFIG.centerCircleSize, 0, 2 * Math.PI);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+      ctx.strokeStyle = "#F26A21";
+      ctx.lineWidth = 8;
+      ctx.stroke();
+
+      ctx.fillStyle = "#0F4C2E";
+      ctx.font = "bold 20px 'Inter', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("NAKATO", centerX, centerY);
+    }
+
+    function calculatePrize(finalRotation) {
+      const normalizedRotation = finalRotation % 360;
+      const anglePerSlice = 360 / PRIZES.length;
+      const adjustedRotation = (normalizedRotation + anglePerSlice / 2) % 360;
+      const prizeIndex = Math.floor(adjustedRotation / anglePerSlice) % PRIZES.length;
+      return PRIZES[prizeIndex].name;
+    }
+
+    function selectPrizeByProbability() {
+      const random = Math.random() * 100;
+      let cumulativeProbability = 0;
+
+      for (let i = 0; i < PRIZES.length; i++) {
+        cumulativeProbability += PRIZES[i].probability;
+        if (random <= cumulativeProbability) {
+          return i;
+        }
+      }
+      return 0;
+    }
+
+    function spinWheel() {
+      if (isSpinning) return;
+
+      isSpinning = true;
+      document.getElementById('spinButton').disabled = true;
+      document.getElementById('spinButton').textContent = 'Girando...';
+
+      const targetPrizeIndex = selectPrizeByProbability();
+      const anglePerSlice = 360 / PRIZES.length;
+      const targetAngle = targetPrizeIndex * anglePerSlice;
+      const extraSpins = WHEEL_CONFIG.minSpins * 360;
+      const finalRotation = extraSpins + (360 - targetAngle) + anglePerSlice / 2;
+
+      const startTime = Date.now();
+      const startRotation = rotation;
+
+      function animate() {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / WHEEL_CONFIG.spinDuration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+
+        const currentRotation = startRotation + finalRotation * easeOut;
+        rotation = currentRotation;
+        drawWheel(currentRotation);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          document.getElementById('spinButton').disabled = false;
+          document.getElementById('spinButton').textContent = 'GIRAR ROLETA';
+          
+          const prize = calculatePrize(currentRotation);
+          document.getElementById('prizeText').textContent = prize;
+          document.getElementById('prizeModal').classList.add('show');
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function closeModal() {
+      document.getElementById('prizeModal').classList.remove('show');
+    }
+
+    drawWheel();
+  </script>
+</body>
+</html>
