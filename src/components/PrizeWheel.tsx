@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import confetti from "canvas-confetti";
 
 // ==========================================
 // 🎯 CONFIGURAÇÃO DOS PRÊMIOS E PROBABILIDADES
@@ -38,9 +39,10 @@ export const PrizeWheel = () => {
   const [rotation, setRotation] = useState(0);
   const [wonPrize, setWonPrize] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [winningIndex, setWinningIndex] = useState<number | null>(null);
 
   // Desenhar a roleta no canvas
-  const drawWheel = (currentRotation: number = 0) => {
+  const drawWheel = (currentRotation: number = 0, highlightIndex: number | null = null) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -64,6 +66,7 @@ export const PrizeWheel = () => {
     PRIZES.forEach((prize, index) => {
       const startAngle = index * anglePerSlice - Math.PI / 2;
       const endAngle = startAngle + anglePerSlice;
+      const isWinning = highlightIndex === index;
 
       // Fatia
       ctx.beginPath();
@@ -72,6 +75,17 @@ export const PrizeWheel = () => {
       ctx.closePath();
       ctx.fillStyle = prize.color;
       ctx.fill();
+
+      // Destaque para a fatia vencedora
+      if (isWinning) {
+        ctx.strokeStyle = "#FFD700";
+        ctx.lineWidth = 6;
+        ctx.shadowColor = "#FFD700";
+        ctx.shadowBlur = 20;
+        ctx.stroke();
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+      }
 
       // Borda branca entre fatias
       ctx.strokeStyle = "#FFFFFF";
@@ -149,13 +163,36 @@ export const PrizeWheel = () => {
   };
 
   // Calcular prêmio baseado no ângulo final
-  const calculatePrize = (finalRotation: number): string => {
+  const calculatePrize = (finalRotation: number): { name: string; index: number } => {
     const normalizedRotation = finalRotation % 360;
     const anglePerSlice = 360 / PRIZES.length;
     // A seta está no topo (0°). Ajustar para encontrar qual fatia está no topo
     const adjustedRotation = (normalizedRotation + anglePerSlice / 2) % 360;
     const prizeIndex = Math.floor(adjustedRotation / anglePerSlice) % PRIZES.length;
-    return PRIZES[prizeIndex].name;
+    return { name: PRIZES[prizeIndex].name, index: prizeIndex };
+  };
+
+  // Animação de confete
+  const shootConfetti = () => {
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      colors: ['#F26A21', '#0F4C2E', '#FFD700', '#FFFFFF']
+    };
+
+    function fire(particleRatio: number, opts: any) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio)
+      });
+    }
+
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1, { spread: 120, startVelocity: 45 });
   };
 
   // Selecionar prêmio baseado na probabilidade
@@ -179,6 +216,7 @@ export const PrizeWheel = () => {
 
     setIsSpinning(true);
     setShowModal(false);
+    setWinningIndex(null);
 
     const targetPrizeIndex = selectPrizeByProbability();
     const anglePerSlice = 360 / PRIZES.length;
@@ -207,9 +245,16 @@ export const PrizeWheel = () => {
         requestAnimationFrame(animate);
       } else {
         setIsSpinning(false);
-        const prize = calculatePrize(currentRotation);
-        setWonPrize(prize);
-        setShowModal(true);
+        const prizeResult = calculatePrize(currentRotation);
+        setWonPrize(prizeResult.name);
+        setWinningIndex(prizeResult.index);
+        drawWheel(currentRotation, prizeResult.index);
+        
+        // Disparar confete após pequeno delay
+        setTimeout(() => {
+          shootConfetti();
+          setShowModal(true);
+        }, 300);
       }
     };
 
@@ -218,7 +263,7 @@ export const PrizeWheel = () => {
 
   // Desenhar roleta inicial
   useEffect(() => {
-    drawWheel(rotation);
+    drawWheel(rotation, winningIndex);
   }, []);
 
   return (
